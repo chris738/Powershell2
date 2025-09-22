@@ -124,6 +124,8 @@ F:\Shares\
 - ❌ **Keine Gruppenmitgliedschaften für Verzeichniszugriff**
 - ❌ **Keine Berechtigungen für Abteilungsordner oder Global-Ordner**
 - ✅ **Nur Basis-AD-Konto wird erstellt**
+- 🔧 **Benutzername: gast1 bis gast10 (nicht firstname.lastname Format)**
+- 🔐 **Kennwort muss nicht beim ersten Anmelden geändert werden**
 
 ## SMB-Shares
 
@@ -142,7 +144,12 @@ Die CSV-Datei muss folgende Spalten enthalten:
 Vorname;Nachname;Abteilung;E-Mail
 Jan;Janssen;Vorstand;jan.janssen@company.de
 Marco;Peters;Bar;marco.peters@company.de
+gast1;Nutzer1;Gast;gast_1@company.de
 ```
+
+**Besondere Namenskonvention für Gast-Benutzer:**
+- Gast-Benutzer verwenden `gast1`, `gast2`, etc. als Vorname
+- Dies erzeugt Benutzernamen `gast1`, `gast2`, etc. (nicht `gast1.nutzer1`)
 
 ### Unterstützte Abteilungen
 - Vorstand
