@@ -136,6 +136,15 @@ F:\Shares\
 | `Global$` | F:\Shares\Global | DL_Global-FS_RW: Full, DL_Global-FS_R: Read |
 | `Abteilungen$` | F:\Shares\Abteilungen | DL_Dept-FS_RW: Full, DL_Dept-FS_R: Read |
 
+### Automatische Bereinigung verwaister Freigaben
+
+⚠️ **Neue Funktion**: Vor der Erstellung neuer Netzwerkfreigaben prüft das Skript automatisch auf verwaiste (nicht mehr benötigte) Freigaben und entfernt diese.
+
+- **Erwartete Freigaben**: Nur die vier oben genannten Shares sind zulässig
+- **Ausgeschlossen**: Administrative Shares (C$, D$, IPC$, ADMIN$, NETLOGON, SYSVOL) werden nicht berührt
+- **Automatische Entfernung**: Alle anderen Freigaben werden als verwaist betrachtet und entfernt
+- **Protokollierung**: Alle Aktionen werden im Setup-Log dokumentiert
+
 ## CSV-Format
 
 Die CSV-Datei muss folgende Spalten enthalten:
