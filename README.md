@@ -118,6 +118,13 @@ F:\Shares\
 - 📖 **Leserechte** auf Global-Ordner
 - ✏️ **Vollzugriff** auf eigenen Abteilungsordner
 
+### Gast-Benutzer (Spezielle Behandlung)
+- ❌ **Keine Home-Verzeichnisse**
+- ❌ **Keine Roaming Profiles**
+- ❌ **Keine Gruppenmitgliedschaften für Verzeichniszugriff**
+- ❌ **Keine Berechtigungen für Abteilungsordner oder Global-Ordner**
+- ✅ **Nur Basis-AD-Konto wird erstellt**
+
 ## SMB-Shares
 
 | Share | Pfad | Berechtigung |

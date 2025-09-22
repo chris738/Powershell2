@@ -201,8 +201,8 @@ function Create-Users {
         $sam = Get-SamAccountName -Vorname $u.Vorname -Nachname $u.Nachname
         if (Get-ADUser -Filter "SamAccountName -eq '$sam'" -ErrorAction SilentlyContinue) { continue }
         $ouPath = "OU=$($u.Abteilung),$dcPath"
-        # ProfilePath OHNE Suffix – OS hängt .Vx selbst an
-        $profilePath = "\\$server\Profiles$\$sam"
+        # ProfilePath OHNE Suffix – OS hängt .Vx selbst an (nur für Nicht-Gast-Benutzer)
+        $profilePath = if ($u.Abteilung -ne 'Gast') { "\\$server\Profiles$\$sam" } else { $null }
         try {
             New-ADUser -Name "$($u.Vorname) $($u.Nachname)" `
                        -SamAccountName $sam `
@@ -238,8 +238,10 @@ function Setup-GG-Membership {
         Write-Host "  DL_RW:       $dlRW"
         Write-Host "  DL_R:        $dlR"
 
-        # Benutzer in ihre GG-Gruppe aufnehmen
-        Get-ADUser -SearchBase $ouPath -Filter * -ErrorAction SilentlyContinue | ForEach-Object {
+        # Benutzer in ihre GG-Gruppe aufnehmen (außer Gast-Benutzer)
+        Get-ADUser -SearchBase $ouPath -Filter * -Properties Department -ErrorAction SilentlyContinue | Where-Object {
+            $_.Department -ne 'Gast'
+        } | ForEach-Object {
             Add-ADGroupMember -Identity $gg -Members $_ -ErrorAction SilentlyContinue
             Write-Host "    Benutzer $($_.SamAccountName) → $gg"
         }
@@ -257,14 +259,19 @@ function Setup-GG-Membership {
             Write-Host "    $vorstand → $dlR"
         }
 
-        # jede Abteilungs-GG auch in DL_RoamingProfileUsers aufnehmen
-        Add-ADGroupMember -Identity $rpGroup -Members $gg -ErrorAction SilentlyContinue
-        Write-Host "    $gg → $rpGroup"
+        # jede Abteilungs-GG auch in DL_RoamingProfileUsers aufnehmen (außer Gast)
+        if ($dep -ne 'Gast') {
+            Add-ADGroupMember -Identity $rpGroup -Members $gg -ErrorAction SilentlyContinue
+            Write-Host "    $gg → $rpGroup"
+        }
     }
 
     foreach ($dep in $departments) {
         $gg = "GG_${dep}-MA"
-        if ($dep -eq 'Verwaltung') {
+        # Gast-Abteilung erhält keine Global-Berechtigungen
+        if ($dep -eq 'Gast') {
+            continue
+        } elseif ($dep -eq 'Verwaltung') {
             Add-ADGroupMember -Identity 'DL_Global-FS_RW' -Members $gg -ErrorAction SilentlyContinue
             Write-Host "  $gg → DL_Global-FS_RW (Verwaltung RW)"
         } else {
