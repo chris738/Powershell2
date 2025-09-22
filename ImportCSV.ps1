@@ -157,7 +157,7 @@ function Setup-Groups {
     # Globale DL-Gruppen
     foreach ($grp in 'DL_Global-FS_RW','DL_Global-FS_R') {
         if (-not (Get-ADGroup -Filter "Name -eq '$grp'" -ErrorAction SilentlyContinue)) {
-            New-ADGroup -Name $grp -GroupScope DomainLocal -GroupCategory Security -Path $dcPath -Description 'DL Global FS'
+            New-ADGroup -Name $grp -GroupScope DomainLocal -GroupCategory Security -Path "CN=Users,$dcPath" -Description 'DL Global FS'
             Write-Host "Gruppe erstellt: $grp" -ForegroundColor Green
         } else {
             Write-Host "Gruppe vorhanden: $grp" -ForegroundColor Yellow
