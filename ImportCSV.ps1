@@ -435,24 +435,11 @@ function Setup-SharePermissions {
 function Setup-RoamingProfilesSecurity {
     Write-Host "== Roaming Profiles: Gruppe, ACL & Share ==" -ForegroundColor Cyan
 
-    $groupName = "GG_RoamingProfileUsers"
-    $group = Get-ADGroup -Filter "Name -eq '$groupName'" -ErrorAction SilentlyContinue
-    if (-not $group) {
-        $group = New-ADGroup -Name $groupName -GroupScope Global -GroupCategory Security `
-                 -Path "CN=Users,$dcPath" -Description "Benutzer mit Roamingprofil (Stammordnerberechtigung)"
-        Write-Host "Gruppe erstellt: $groupName"
-    } else { Write-Host "Gruppe vorhanden: $groupName" }
-
-    # AGDLP-konform: GG_RoamingProfileUsers nur in DL_RoamingProfileUsers aufnehmen
+    # DL_RoamingProfileUsers wird bereits in Setup-Groups erstellt
+    # Alle MA-Gruppen werden bereits in Setup-GG-Membership hinzugefügt
     $dlRoamingGroup = "DL_RoamingProfileUsers"
-    try {
-        Add-ADGroupMember -Identity $dlRoamingGroup -Members $group -ErrorAction Stop
-        Write-Host "$groupName → $dlRoamingGroup (AGDLP-konform)"
-    } catch {
-        if ($_.Exception.Message -notmatch 'already a member|bereits ein Mitglied') {
-            Write-Warning "Konnte $groupName nicht zu $dlRoamingGroup hinzufügen: $($_.Exception.Message)"
-        }
-    }
+    
+    Write-Host "Verwende bereits existierende Gruppe: $dlRoamingGroup"
 
     # NTFS am Profiles-ROOT (F:\Shares\Profiles) nach MS-Best Practice
     $profilesRoot = Join-Path $basePath 'Profiles'
@@ -463,8 +450,7 @@ function Setup-RoamingProfilesSecurity {
 
     $sidSystem   = New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-18'
     $sidAdmins   = $adminSid                    # Domain Admins (DomainSID-512)
-    $sidCreator  = New-Object System.Security.Principal.NTAccount 'CREATOR OWNER'
-    $sidGroup    = (New-Object System.Security.Principal.NTAccount("$($domain.NetBIOSName)\$groupName")).Translate([System.Security.Principal.SecurityIdentifier])
+    $sidGroup    = (New-Object System.Security.Principal.NTAccount("$($domain.NetBIOSName)\$dlRoamingGroup")).Translate([System.Security.Principal.SecurityIdentifier])
 
     # Bestehende ACEs entfernen (optional sicherer Reset)
     foreach ($rule in @($acl.Access)) { [void]$acl.RemoveAccessRule($rule) }
@@ -496,7 +482,7 @@ function Setup-RoamingProfilesSecurity {
 		)
 	))
 
-    # GG_RoamingProfileUsers: List/Read + CreateFolder/Append (nur dieser Ordner)
+    # DL_RoamingProfileUsers: List/Read + CreateFolder/Append (nur dieser Ordner)
     $rights = [System.Security.AccessControl.FileSystemRights]::ListDirectory `
             -bor [System.Security.AccessControl.FileSystemRights]::Read `
             -bor [System.Security.AccessControl.FileSystemRights]::CreateDirectories `
