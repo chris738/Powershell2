@@ -74,10 +74,17 @@ function Get-DepartmentsFromCSV {
 
 function Get-SamAccountName {
     param([Parameter(Mandatory=$true)][string]$Vorname,
-          [Parameter(Mandatory=$true)][string]$Nachname)
+          [Parameter(Mandatory=$true)][string]$Nachname,
+          [string]$Abteilung)
     $v = ($Vorname -replace '\s+','').Trim()
     $n = ($Nachname -replace '\s+','').Trim()
     if (-not $v -or -not $n) { throw "Vorname/Nachname leer" }
+    
+    # For guest users, use the first name as-is (gast1, gast2, etc.)
+    if ($Abteilung -eq 'Gast' -and $v -match '^gast\d+$') {
+        return $v.ToLower()
+    }
+    
     return "$v.$n".ToLower()
 }
 
@@ -198,11 +205,13 @@ function Create-Users {
     Write-Host "== Benutzer anlegen ==" -ForegroundColor Cyan
     $users = Import-Csv -Path $CsvFile -Delimiter ';'
     foreach ($u in $users) {
-        $sam = Get-SamAccountName -Vorname $u.Vorname -Nachname $u.Nachname
+        $sam = Get-SamAccountName -Vorname $u.Vorname -Nachname $u.Nachname -Abteilung $u.Abteilung
         if (Get-ADUser -Filter "SamAccountName -eq '$sam'" -ErrorAction SilentlyContinue) { continue }
         $ouPath = "OU=$($u.Abteilung),$dcPath"
         # ProfilePath OHNE Suffix – OS hängt .Vx selbst an (nur für Nicht-Gast-Benutzer)
         $profilePath = if ($u.Abteilung -ne 'Gast') { "\\$server\Profiles$\$sam" } else { $null }
+        # Guest users should not have to change password on first login
+        $changePasswordAtLogon = if ($u.Abteilung -eq 'Gast') { $false } else { $true }
         try {
             New-ADUser -Name "$($u.Vorname) $($u.Nachname)" `
                        -SamAccountName $sam `
@@ -210,7 +219,7 @@ function Create-Users {
                        -GivenName $u.Vorname -Surname $u.Nachname -EmailAddress $u.'E-Mail' `
                        -Path $ouPath -ProfilePath $profilePath `
                        -AccountPassword (ConvertTo-SecureString 'Start123!' -AsPlainText -Force) `
-                       -ChangePasswordAtLogon $true -Enabled $true
+                       -ChangePasswordAtLogon $changePasswordAtLogon -Enabled $true
             Write-Host "Benutzer erstellt: $sam"
         } catch {
             if ($_.Exception.Message -match 'already exists|bereits vorhanden') {
@@ -417,6 +426,20 @@ function Create-HomeAndProfileFolders {
             # NICHT erstellen. OS legt \\$server\Profiles$\<sam>.Vx selbst an.
             $profUNC = "\\$server\Profiles$\$sam"
             Set-ADUser $_ -ProfilePath $profUNC
+        }
+    }
+    
+    # Ensure guest users don't have home directories or profile paths set
+    Write-Host "== Ensuring guest users have no home/profile paths ==" -ForegroundColor Cyan
+    $guestSearchBase = "OU=Gast,$dcPath"
+    Get-ADUser -SearchBase $guestSearchBase -Filter * -Properties SamAccountName,HomeDirectory,ProfilePath,Enabled -ErrorAction SilentlyContinue | Where-Object {
+        $_.Enabled
+    } | ForEach-Object {
+        $sam = $_.SamAccountName
+        # Clear any existing home directory and profile path settings for guest users
+        if ($_.HomeDirectory -or $_.ProfilePath) {
+            Set-ADUser $_ -HomeDirectory $null -HomeDrive $null -ProfilePath $null
+            Write-Host "Cleared home/profile paths for guest user: $sam"
         }
     }
 }
