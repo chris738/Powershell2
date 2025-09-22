@@ -374,13 +374,55 @@ function Setup-Fileserver-Rights {
   # Profiles-Root NICHT hier anfassen → macht Setup-RoamingProfilesSecurity
 }
 
+function Remove-OrphanedShares {
+    Write-Host "== Prüfung auf verwaiste Freigaben ==" -ForegroundColor Cyan
+    
+    # Define expected shares
+    $expectedShares = @('Home$', 'Profiles$', 'Global$', 'Abteilungen$')
+    
+    # Get all existing SMB shares (excluding administrative shares)
+    $existingShares = Get-SmbShare -ErrorAction SilentlyContinue | Where-Object { 
+        $_.Name -notmatch '^[A-Z]\$$' -and 
+        $_.Name -ne 'IPC$' -and 
+        $_.Name -ne 'ADMIN$' -and 
+        $_.Name -ne 'print$' -and
+        $_.Name -notlike 'NETLOGON*' -and
+        $_.Name -notlike 'SYSVOL*'
+    }
+    
+    # Find orphaned shares (existing shares that are not in expected list)
+    $orphanedShares = $existingShares | Where-Object { $_.Name -notin $expectedShares }
+    
+    if ($orphanedShares) {
+        Write-Host "Gefundene verwaiste Freigaben:" -ForegroundColor Yellow
+        foreach ($share in $orphanedShares) {
+            Write-Host "  - $($share.Name) (Pfad: $($share.Path))" -ForegroundColor Yellow
+            try {
+                Remove-SmbShare -Name $share.Name -Force -ErrorAction Stop
+                Write-Host "    Verwaiste Freigabe entfernt: $($share.Name)" -ForegroundColor Green
+            } catch {
+                Write-Host "    Fehler beim Entfernen der Freigabe $($share.Name): $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
+    } else {
+        Write-Host "Keine verwaisten Freigaben gefunden." -ForegroundColor Green
+    }
+}
+
 function Setup-NetworkShares {
     Write-Host "== SMB-Shares ==" -ForegroundColor Cyan
+    
+    # Remove orphaned shares before creating new ones
+    Remove-OrphanedShares
+    
     $everyone = Get-LocalizedAccountName 'Everyone'
     function EnsureShare($name,$path,$desc) {
         if (-not (Get-SmbShare -Name $name -ErrorAction SilentlyContinue)) {
             New-SmbShare -Name $name -Path $path -Description $desc -FullAccess $env:USERNAME | Out-Null
             Revoke-SmbShareAccess -Name $name -AccountName $everyone -Force -ErrorAction SilentlyContinue
+            Write-Host "  Freigabe erstellt: $name" -ForegroundColor Green
+        } else {
+            Write-Host "  Freigabe vorhanden: $name" -ForegroundColor Yellow
         }
     }
     EnsureShare 'Home$'      "$basePath\Home"     'Homeverzeichnisse'
