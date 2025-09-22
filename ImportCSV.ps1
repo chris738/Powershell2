@@ -188,7 +188,6 @@ function Setup-Groups {
         }
 
         Add-ADGroupMember -Identity $dlRW -Members $gg -ErrorAction SilentlyContinue
-        Add-ADGroupMember -Identity $dlR  -Members $gg -ErrorAction SilentlyContinue
     }
 
     # Roaming Profile Gruppe (als DL!)
@@ -255,11 +254,9 @@ function Setup-GG-Membership {
             Write-Host "    Benutzer $($_.SamAccountName) → $gg"
         }
 
-        # GG in DLs aufnehmen
+        # GG in DL aufnehmen (nur RW, da RW-Berechtigung ausreicht)
         Add-ADGroupMember -Identity $dlRW -Members $gg -ErrorAction SilentlyContinue
         Write-Host "    $gg → $dlRW"
-        Add-ADGroupMember -Identity $dlR -Members $gg -ErrorAction SilentlyContinue
-        Write-Host "    $gg → $dlR"
 
         # Vorstand bekommt Leserechte
         $vorstand = 'GG_Vorstand-MA'
