@@ -21,6 +21,7 @@ Dieses Repository enthält ein PowerShell-Skript (`ImportCSV.ps1`) für die auto
 | `ImportCSV.ps1` | Haupt-PowerShell-Skript für Fileserver-Setup |
 | `Userlist-EchtHamburg.csv` | Beispiel-CSV mit Benutzerdaten |
 | `AGDLP-Analysis.md` | Detaillierte AGDLP-Compliance-Analyse |
+| `AGDLP-ASCII-Art.md` | AGDLP-Struktur als ASCII-Art-Diagramm |
 | `Script-Documentation.md` | Umfassende Mermaid-Dokumentation |
 | `README.md` | Diese Datei |
 
@@ -175,6 +176,7 @@ gast1;Nutzer1;Gast;gast_1@company.de
 Detaillierte Dokumentation finden Sie in:
 
 - 📋 **[AGDLP-Analysis.md](AGDLP-Analysis.md)** - Compliance-Analyse
+- 🎨 **[AGDLP-ASCII-Art.md](AGDLP-ASCII-Art.md)** - AGDLP-Struktur als ASCII-Art-Diagramm
 - 📊 **[Script-Documentation.md](Script-Documentation.md)** - Mermaid-Diagramme und Ablaufpläne
 
 ## Sicherheitshinweise
