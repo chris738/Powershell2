@@ -49,15 +49,17 @@ Users → Global Groups → Domain Local Groups → Permissions
    - GG_Verwaltung-MA gets RW access to Global resources
    - Other departments get read-only access to Global resources
 
-3. **Roaming Profiles**: ✅ IMPROVED COMPLIANCE
-   - Uses GG_RoamingProfileUsers (Global group) → DL_RoamingProfileUsers (Domain Local)
-   - Proper AGDLP nesting implemented
+3. **Roaming Profiles**: ✅ FULLY COMPLIANT
+   - Department MA groups are added directly to DL_RoamingProfileUsers (Domain Local)
+   - AGDLP principle followed: MA Groups → DL_RoamingProfileUsers → NTFS Permissions
+   - No redundant intermediate groups
 
 ## Issues Found and Fixed:
 
 ### Issue 1: Mixed Group Types (FIXED in current version)
 - ❌ Original: DL_RoamingProfileUsers was used directly for both user membership AND permissions
-- ✅ Fixed: Script now uses GG_RoamingProfileUsers → DL_RoamingProfileUsers structure
+- ✅ Fixed: All department MA groups are added directly to DL_RoamingProfileUsers
+- ✅ Improved: Removed redundant GG_RoamingProfileUsers intermediate group for cleaner AGDLP structure
 
 ### Issue 2: Group Scope Consistency (VERIFIED CORRECT)
 - ✅ Global Groups (GG_*): Used for user aggregation
@@ -66,9 +68,10 @@ Users → Global Groups → Domain Local Groups → Permissions
 
 ### Issue 3: AGDLP Violation in Roaming Profiles (FIXED)
 - ❌ Original: GG_RoamingProfileUsers was being added to ALL DL_* groups (violates AGDLP)
-- ✅ Fixed: GG_RoamingProfileUsers now only added to DL_RoamingProfileUsers (AGDLP-compliant)
-- **Location**: Setup-RoamingProfilesSecurity function, lines 446-457
-- **Impact**: Maintains proper group hierarchy and prevents permission bloat
+- ✅ Fixed: Removed redundant GG_RoamingProfileUsers group entirely
+- ✅ Improved: Direct membership: GG_{Department}-MA → DL_RoamingProfileUsers (AGDLP-compliant)
+- **Location**: Setup-RoamingProfilesSecurity function, lines 435-442
+- **Impact**: Maintains proper group hierarchy and eliminates permission bloat
 
 ## AGDLP Compliance Rating: ✅ FULLY COMPLIANT (after fixes)
 
