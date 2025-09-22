@@ -443,16 +443,14 @@ function Setup-RoamingProfilesSecurity {
         Write-Host "Gruppe erstellt: $groupName"
     } else { Write-Host "Gruppe vorhanden: $groupName" }
 
-    # Gruppe in alle DL_* Gruppen aufnehmen (wie gewünscht)
-    $dlGroups = Get-ADGroup -Filter "Name -like 'DL_*'"
-    foreach ($dl in $dlGroups) {
-        try {
-            Add-ADGroupMember -Identity $dl -Members $group -ErrorAction Stop
-            Write-Host "$groupName → $($dl.Name)"
-        } catch {
-            if ($_.Exception.Message -notmatch 'already a member|bereits ein Mitglied') {
-                Write-Warning "Konnte $groupName nicht zu $($dl.Name) hinzufügen: $($_.Exception.Message)"
-            }
+    # AGDLP-konform: GG_RoamingProfileUsers nur in DL_RoamingProfileUsers aufnehmen
+    $dlRoamingGroup = "DL_RoamingProfileUsers"
+    try {
+        Add-ADGroupMember -Identity $dlRoamingGroup -Members $group -ErrorAction Stop
+        Write-Host "$groupName → $dlRoamingGroup (AGDLP-konform)"
+    } catch {
+        if ($_.Exception.Message -notmatch 'already a member|bereits ein Mitglied') {
+            Write-Warning "Konnte $groupName nicht zu $dlRoamingGroup hinzufügen: $($_.Exception.Message)"
         }
     }
 
